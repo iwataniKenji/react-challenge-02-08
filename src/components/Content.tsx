@@ -1,39 +1,39 @@
-import { useEffect, useState } from "react";
-import { api } from "../services/api";
+import { memo } from "react";
 import { MovieCard } from "./MovieCard";
-
-interface MovieProps {
-  imdbID: string;
-  Title: string;
-  Poster: string;
-  Ratings: Array<{
-    Source: string;
-    Value: string;
-  }>;
-  Runtime: string;
-}
-
-interface GenreResponseProps {
-  id: number;
-  name: "action" | "comedy" | "documentary" | "drama" | "horror" | "family";
-  title: string;
-}
+import { List, ListRowRenderer } from "react-virtualized";
 
 interface ContentProps {
-  selectedGenreId: number;
-  selectedGenre: GenreResponseProps;
+  movies: Array<{
+    imdbID: string;
+    Title: string;
+    Poster: string;
+    Ratings: Array<{
+      Source: string;
+      Value: string;
+    }>;
+    Runtime: string;
+  }>;
+  selectedGenre: {
+    id: number;
+    name: "action" | "comedy" | "documentary" | "drama" | "horror" | "family";
+    title: string;
+  };
 }
 
-export function Content({ selectedGenreId, selectedGenre }: ContentProps) {
-  const [movies, setMovies] = useState<MovieProps[]>([]);
-
-  useEffect(() => {
-    api
-      .get<MovieProps[]>(`movies/?Genre_id=${selectedGenreId}`)
-      .then((response) => {
-        setMovies(response.data);
-      });
-  }, [selectedGenreId]);
+function ContentComponent({ movies, selectedGenre }: ContentProps) {
+  const rowRenderer: ListRowRenderer = ({ index, key, style }) => {
+    return (
+      <div key={key} style={style}>
+        <MovieCard
+          key={movies[index].imdbID}
+          title={movies[index].Title}
+          poster={movies[index].Poster}
+          runtime={movies[index].Runtime}
+          rating={movies[index].Ratings[0].Value}
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="container">
@@ -44,18 +44,19 @@ export function Content({ selectedGenreId, selectedGenre }: ContentProps) {
       </header>
 
       <main>
-        <div className="movies-list">
-          {movies.map((movie) => (
-            <MovieCard
-              key={movie.imdbID}
-              title={movie.Title}
-              poster={movie.Poster}
-              runtime={movie.Runtime}
-              rating={movie.Ratings[0].Value}
-            />
-          ))}
-        </div>
+        <List
+          height={550}
+          rowHeight={440}
+          width={800}
+          overscanRowCount={1}
+          rowCount={movies.length}
+          rowRenderer={rowRenderer}
+        />
       </main>
     </div>
   );
 }
+
+export const Content = memo(ContentComponent, (prevProps, nextProps) => {
+  return Object.is(prevProps.movies, nextProps.movies);
+});

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState, useMemo } from "react";
 
 import { SideBar } from "./components/SideBar";
 import { Content } from "./components/Content";
@@ -6,7 +6,6 @@ import { Content } from "./components/Content";
 import { api } from "./services/api";
 
 import "./styles/global.scss";
-
 import "./styles/sidebar.scss";
 import "./styles/content.scss";
 
@@ -16,13 +15,42 @@ interface GenreResponseProps {
   title: string;
 }
 
+interface MovieProps {
+  imdbID: string;
+  Title: string;
+  Poster: string;
+  Ratings: Array<{
+    Source: string;
+    Value: string;
+  }>;
+  Runtime: string;
+}
+
 export function App() {
+  const [genres, setGenres] = useState<GenreResponseProps[]>([]);
+  const [movies, setMovies] = useState<MovieProps[]>([]);
+
   const [selectedGenreId, setSelectedGenreId] = useState(1);
   const [selectedGenre, setSelectedGenre] = useState<GenreResponseProps>(
     {} as GenreResponseProps
   );
 
-  useEffect(() => {
+  useMemo(() => {
+    // setting genres
+    api.get<GenreResponseProps[]>("genres").then((response) => {
+      setGenres(response.data);
+    });
+  }, []);
+
+  useMemo(() => {
+    // setting movies when changed
+    api
+      .get<MovieProps[]>(`movies/?Genre_id=${selectedGenreId}`)
+      .then((response) => {
+        setMovies(response.data);
+      });
+
+    // setting selected genre when changed
     api
       .get<GenreResponseProps>(`genres/${selectedGenreId}`)
       .then((response) => {
@@ -30,20 +58,18 @@ export function App() {
       });
   }, [selectedGenreId]);
 
-  function handleClickButton(id: number) {
+  const handleClickButton = useCallback((id: number) => {
     setSelectedGenreId(id);
-  }
+  }, []);
 
   return (
     <div style={{ display: "flex", flexDirection: "row" }}>
       <SideBar
+        genres={genres}
         handleClickButton={handleClickButton}
         selectedGenreId={selectedGenreId}
       />
-      <Content
-        selectedGenreId={selectedGenreId}
-        selectedGenre={selectedGenre}
-      />
+      <Content movies={movies} selectedGenre={selectedGenre} />
     </div>
   );
 }
