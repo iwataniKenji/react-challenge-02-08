@@ -1,6 +1,5 @@
 import { memo } from "react";
 import { MovieCard } from "./MovieCard";
-import { List, ListRowRenderer } from "react-virtualized";
 
 interface ContentProps {
   movies: Array<{
@@ -21,20 +20,6 @@ interface ContentProps {
 }
 
 function ContentComponent({ movies, selectedGenre }: ContentProps) {
-  const rowRenderer: ListRowRenderer = ({ index, key, style }) => {
-    return (
-      <div key={key} style={style}>
-        <MovieCard
-          key={movies[index].imdbID}
-          title={movies[index].Title}
-          poster={movies[index].Poster}
-          runtime={movies[index].Runtime}
-          rating={movies[index].Ratings[0].Value}
-        />
-      </div>
-    );
-  };
-
   return (
     <div className="container">
       <header>
@@ -44,14 +29,19 @@ function ContentComponent({ movies, selectedGenre }: ContentProps) {
       </header>
 
       <main>
-        <List
-          height={550}
-          rowHeight={440}
-          width={800}
-          overscanRowCount={1}
-          rowCount={movies.length}
-          rowRenderer={rowRenderer}
-        />
+        <div className="movies-list">
+          {movies.map((movie) => {
+            return (
+              <MovieCard
+                key={movie.imdbID}
+                title={movie.Title}
+                poster={movie.Poster}
+                runtime={movie.Runtime}
+                rating={movie.Ratings[0].Value}
+              />
+            );
+          })}
+        </div>
       </main>
     </div>
   );
